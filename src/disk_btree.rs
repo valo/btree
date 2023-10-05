@@ -1,6 +1,6 @@
-use wal_file::{RecordFile, RecordFileIterator, KeyValuePair};
+use wal_file::{KeyValuePair, RecordFile, RecordFileIterator};
 
-use ::{KeyType, ValueType};
+use {KeyType, ValueType};
 
 use std::error::Error;
 // use std::iter::Filter;
@@ -44,66 +44,69 @@ struct Node<K: KeyType, V: ValueType> {
 /// | root node                                 |
 /// |-------------------------------------------|
 
-
 // total hack to get things going
 pub struct OnDiskBTree<K: KeyType, V: ValueType> {
-    file: RecordFile<K,V>
+    file: RecordFile<K, V>,
 }
 
 pub struct OnDiskBTreeIterator<'a, K: KeyType + 'a, V: ValueType + 'a> {
-    record_iterator: RecordFileIterator<'a,K,V>
+    record_iterator: RecordFileIterator<'a, K, V>,
 }
 
-
-impl <K: KeyType, V: ValueType> OnDiskBTree<K,V> {
-    pub fn new(file_path: String, key_size: usize, value_size: usize) -> Result<OnDiskBTree<K,V>, Box<Error>> {
-        return Ok(OnDiskBTree{file: try!(RecordFile::new(&file_path, key_size, value_size))});
+impl<K: KeyType, V: ValueType> OnDiskBTree<K, V> {
+    pub fn new(
+        file_path: String,
+        key_size: usize,
+        value_size: usize,
+    ) -> Result<OnDiskBTree<K, V>, Box<dyn Error>> {
+        return Ok(OnDiskBTree {
+            file: RecordFile::new(&file_path, key_size, value_size)?,
+        });
     }
 
-    pub fn is_new(&self) -> Result<bool, Box<Error>> {
+    pub fn is_new(&self) -> Result<bool, Box<dyn Error>> {
         return self.file.is_new();
     }
 
     /// Returns the number of records in the B+Tree
-    pub fn count(&self) -> Result<u64, Box<Error>> {
+    pub fn count(&self) -> Result<u64, Box<dyn Error>> {
         return self.file.count();
     }
 
-    pub fn insert_record(&mut self, kv: &KeyValuePair<K,V>) -> Result<(), Box<Error>> {
+    pub fn insert_record(&mut self, kv: &KeyValuePair<K, V>) -> Result<(), Box<dyn Error>> {
         return self.file.insert_record(kv);
     }
 
-/*
-    fn get(&self, key: &K) -> bool { //Box<Filter<RecordFileIterator<K,V>, fn(KeyValuePair<K,V>) -> bool>> {
-        // return Box::new(self.into_iter().filter(|rec| &rec.key == key));
-        return true;
-    }
-*/
+    /*
+        fn get(&self, key: &K) -> bool { //Box<Filter<RecordFileIterator<K,V>, fn(KeyValuePair<K,V>) -> bool>> {
+            // return Box::new(self.into_iter().filter(|rec| &rec.key == key));
+            return true;
+        }
+    */
 
-    pub fn contains_key(&self, key: &K) -> bool {
+    pub fn contains_key(&self, _key: &K) -> bool {
         return true;
     }
 }
 
-impl <'a, K: KeyType, V: ValueType> IntoIterator for &'a mut OnDiskBTree<K,V> {
-    type Item = KeyValuePair<K,V>;
-    type IntoIter = OnDiskBTreeIterator<'a, K,V>;
+impl<'a, K: KeyType, V: ValueType> IntoIterator for &'a mut OnDiskBTree<K, V> {
+    type Item = KeyValuePair<K, V>;
+    type IntoIter = OnDiskBTreeIterator<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        OnDiskBTreeIterator{record_iterator: self.file.into_iter()}
+        OnDiskBTreeIterator {
+            record_iterator: self.file.into_iter(),
+        }
     }
 }
 
-impl <'a, K: KeyType, V: ValueType> Iterator for OnDiskBTreeIterator<'a,K,V> {
-    type Item = KeyValuePair<K,V>;
+impl<'a, K: KeyType, V: ValueType> Iterator for OnDiskBTreeIterator<'a, K, V> {
+    type Item = KeyValuePair<K, V>;
 
     fn next(&mut self) -> Option<Self::Item> {
         return self.record_iterator.next();
     }
 }
-
-
-
 
 /*
 
